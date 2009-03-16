@@ -1,10 +1,10 @@
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><h1>Ascii85 Codec Library</h1>
-
-<h3>About the codec:</h3>  
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><h3>About the codec:</h3>  
 <p>
-Ascii85 transforms binary into printable 7-bit Ascii and back again. It is similar to the well known Base64 codec, although Base64 was designed to work with EBCDIC as well as ascii, which prevented it from using as many available ascii characters for the encoding. While Base64 increases the size of the encoded data by around 33%, Ascii85 has an increase of around 25%. Ascii85 is a better alternative to Base64 in most cases, with e-mail being the most obvious exception. Postscript and PDF file attachments are encoded in the Ascii85 format.
+Ascii85 transforms binary into printable 7-bit Ascii and back again. It is similar to the well known Base64 codec, although Base64 was designed to work with EBCDIC as well as ascii, which prevented it from using as many available ascii characters for the encoding. While Base64 increases the size of the encoded data by around 33%, Ascii85 has an increase of around 25%. Ascii85 is a better alternative to Base64 in most cases, with e-mail being the most obvious exception. Postscript and PDF file attachments are encoded in the Ascii85 format. See <a href="http://en.wikipedia.org/wiki/Ascii85">The Wikipedia Ascii85 page</a> for more information.
 </p>
 <h3>How to use it:</h3>
 <p>
-The codec is implemented as an ObjectOutputStream for encoding and an ObjectInputStream for encoding. mark() and reset() are supported on the input stream, provided that the underlying input stream supports them. The only special requirement is that either flush() or close() are called on the output stream to close the Ascii85 block, and that flush() is only called when it is desired to end the encoded block. This is the normal usage pattern for streams anyway, so they should plug right into whatever you're using.
+The codec is implemented as an ObjectOutputStream for encoding and an ObjectInputStream for encoding. mark() and reset() are supported on the input stream, provided that the underlying input stream supports them. The only special requirement is that either flush() or close() are called on the output stream to close the Ascii85 block, and that flush() is only called when it is desired to end the encoded block. This is the normal usage pattern for streams anyway, so they should plug right into whatever you're using. This implementation has an option to compress quads of space characters, which can be used to obtain a smaller output from files with lots of consecutive spaces in them, but its use is discouraged if the encoded output is intended to be interoperable with other Ascii85 implementations.
 </p>
+ 
+              
