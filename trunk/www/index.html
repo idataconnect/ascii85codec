@@ -9,5 +9,6 @@ Ascii85 encodes binary into printable 7-bit Ascii. It is similar to the well kno
 The codec is implemented as subclasses of OutputStream (Ascii85OutputStream) for encoding and InputStream (Ascii85InputStream) for decoding. mark() and reset() are supported on the input stream, provided that the underlying input stream supports them. The only special requirement is that either flush() or close() are called on the output stream to close the Ascii85 block, and that flush() is only called when it is desired to end the encoded block. Usually this is not a problem since close() is normally called after writing all data. See the javadocs for more information. See the unit tests for actual code examples.
 </p>
 <p>
- This implementation has an option to compress quads of space characters, which can be used to obtain a smaller output when encoding data containing lots of consecutive spaces, but its use is discouraged if the encoded output is intended to be interoperable with other Ascii85 implementations.
-</p>
+ This implementation has an option to compress quads of space characters, which can be used to obtain a smaller output when encoding data containing lots of space characters, but its use is discouraged if the encoded output is intended to be interoperable with other Ascii85 implementations.
+</p> 
+              
