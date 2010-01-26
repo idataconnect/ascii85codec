@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, i Data Connect!
+ * Copyright (c) 2009-2010, i Data Connect!
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,8 @@ import java.io.OutputStream;
  * </p>
  * @author Ben Upsavs
  */
-public class Ascii85OutputStream extends FilterOutputStream
-{
+public class Ascii85OutputStream extends FilterOutputStream {
+
     private int width = 72;
     private int pos;
     private int tuple;
@@ -71,8 +71,7 @@ public class Ascii85OutputStream extends FilterOutputStream
      * option. Call <code>flush()</code> to add the padding and end the ascii85
      * block.
      */
-    public Ascii85OutputStream(OutputStream out)
-    {
+    public Ascii85OutputStream(OutputStream out) {
         super(out);
     }
 
@@ -83,8 +82,7 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @param useSpaceCompression Whether to use space character compression in
      * the output.
      */
-    public Ascii85OutputStream(OutputStream out, boolean useSpaceCompression)
-    {
+    public Ascii85OutputStream(OutputStream out, boolean useSpaceCompression) {
         this(out);
         this.useSpaceCompression = useSpaceCompression;
     }
@@ -97,15 +95,13 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @param useSpaceCompression Whether to use space character compression in
      * the output.
      */
-    public Ascii85OutputStream(OutputStream out, int width, boolean useSpaceCompression)
-    {
+    public Ascii85OutputStream(OutputStream out, int width, boolean useSpaceCompression) {
         this(out);
         this.width = width;
         this.useSpaceCompression = useSpaceCompression;
     }
 
-    private void startEncoding() throws IOException
-    {
+    private void startEncoding() throws IOException {
         out.write('<');
         out.write('~');
         pos = 2;
@@ -119,47 +115,39 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @throws java.io.IOException If an I/O error occurs in the underlying
      * output stream.
      */
-    public void write(int b) throws IOException
-    {
+    public void write(int b) throws IOException {
         if (!encoding)
             startEncoding();
 
-        switch (count++)
-        {
+        switch (count++) {
             case 0:
-                tuple |= (b << 24);
+                tuple |= ((b & 0xff) << 24);
                 break;
             case 1:
-                tuple |= (b << 16);
+                tuple |= ((b & 0xff) << 16);
                 break;
             case 2:
-                tuple |= (b <<  8);
+                tuple |= ((b & 0xff) << 8);
                 break;
             case 3:
-                tuple |= b;
-                if (tuple == 0)
-                {
+                tuple |= (b & 0xff);
+                if (tuple == 0) {
                     // Use null compression
                     out.write('z');
-                    if (pos++ >= width)
-                    {
+                    if (pos++ >= width) {
                         pos = 0;
                         out.write('\r');
                         out.write('\n');
                     }
-                }
-                else if (useSpaceCompression && (tuple == 0x20202020))
-                {
+                } else if (useSpaceCompression && (tuple == 0x20202020)) {
                     // Use space compression
                     out.write('y');
-                    if (pos++ >= width)
-                    {
+                    if (pos++ >= width) {
                         pos = 0;
                         out.write('\r');
                         out.write('\n');
                     }
-                }
-                else
+                } else
                     encode(tuple, count);
 
                 tuple = 0;
@@ -177,8 +165,7 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @throws java.io.IOException If the underlying output stream has an I/O
      * error.
      */
-    public void writeUnencoded(int b) throws IOException
-    {
+    public void writeUnencoded(int b) throws IOException {
         super.write(b);
     }
 
@@ -191,8 +178,7 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @throws java.io.IOException If the underlying output stream has an I/O
      * error.
      */
-    public void writeUnencoded(byte[] b) throws IOException
-    {
+    public void writeUnencoded(byte[] b) throws IOException {
         writeUnencoded(b, 0, b.length);
     }
 
@@ -207,37 +193,41 @@ public class Ascii85OutputStream extends FilterOutputStream
      * @throws java.io.IOException If the underlying output stream has an I/O
      * error.
      */
-    public void writeUnencoded(byte[] b, int off, int len) throws IOException
-    {
+    public void writeUnencoded(byte[] b, int off, int len) throws IOException {
         for (int i = 0; i < len; i++)
             writeUnencoded(b[off + i]);
     }
 
-    private void encode(int tuple, int count) throws IOException
-    {
+    /**
+     * Encodes <code>tuple</code> and writes it to the output stream. The number
+     * of bytes in the tuple, and thus the value of <code>count</code> is
+     * normally 4, however less bytes may also be encoded, particularly if the
+     * input stream has ended before the current tuple is full.
+     * @param tuple The tuple to encode.
+     * @param count The number of bytes stuffed into the tuple.
+     * @throws IOException If an I/O error occurs.
+     */
+    private void encode(int tuple, int count) throws IOException {
         int i = 5;
-        char[] buf = new char[5];
-        int bufPos = 0;
+        byte[] buf = new byte[5];
+        short bufPos = 0;
 
-        do
-        {
-            buf[bufPos++] = (char)(tuple % 85);
-            tuple /= 85;
-        }
-        while (--i > 0);
+        long longTuple = 0 | (tuple & 0xffffffffL);
+
+        do {
+            buf[bufPos++] = (byte)(longTuple % 85);
+            longTuple /= 85;
+        } while (--i > 0);
 
         i = count;
-        do
-        {
+        do {
             out.write(buf[--bufPos] + '!');
-            if (pos++ >= width)
-            {
+            if (pos++ >= width) {
                 pos = 0;
                 out.write('\r');
                 out.write('\n');
             }
-        }
-        while (i-- > 0);
+        } while (i-- > 0);
     }
 
     /**
@@ -245,15 +235,12 @@ public class Ascii85OutputStream extends FilterOutputStream
      * method should only be called if it is intended that the ascii85 block
      * should be closed.
      */
-    public void flush() throws IOException
-    {
+    public void flush() throws IOException {
         // Add padding if required.
-        if (encoding)
-        {
+        if (encoding) {
             if (count > 0)
                 encode(tuple, count);
-            if (pos + 2 > width)
-            {
+            if (pos + 2 > width) {
                 out.write('\r');
                 out.write('\n');
             }

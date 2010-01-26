@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, i Data Connect!
+ * Copyright (c) 2009-2010, i Data Connect!
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,25 +38,23 @@ import junit.framework.TestCase;
  * Junit 3.x test cases for the input stream (decoder) class.
  * @author Ben Upsavs
  */
-public class Ascii85InputStreamTest extends TestCase
-{
+public class Ascii85InputStreamTest extends TestCase {
+
     protected String phrase = "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
     protected byte[] test1;
     protected byte[] test2;
     protected byte[] test3;
 
-    public Ascii85InputStreamTest(String testName)
-    {
+    public Ascii85InputStreamTest(String testName) {
         super(testName);
     }
 
-    protected void setUp() throws Exception
-    {
-        test1 = ("<~9jqo^BlbD-BleB1DJ+*+F(f,q/0JhKF<GL>Cj@.4Gp$d7F!,L7@<6@)/0JDEF<G%<+EV:2F!,\n" +
-            "O<DJ+*.@<*K0@<6L(Df-\\0Ec5e;DffZ(EZee.Bl.9pF\"AGXBPCsi+DGm>@3BB/F*&OCAfu2/AKY\n" +
-            "i(DIb:@FD,*)+C]U=@3BN#EcYf8ATD3s@q?d$AftVqCh[NqF<G:8+EV:.+Cf>-FD5W8ARlolDIa\n" +
-            "l(DId<j@<?3r@:F%a+D58'ATD4$Bl@l3De:,-DJs`8ARoFb/0JMK@qB4^F!,R<AKZ&-DfTqBG%G" +
-            ">uD.RTpAKYo'+CT/5+Cei#DII?(E,9)oF*2M7/c~>\n").getBytes("US-ASCII");
+    protected void setUp() throws Exception {
+        test1 = ("<~9jqo^BlbD-BleB1DJ+*+F(f,q/0JhKF<GL>Cj@.4Gp$d7F!,L7@<6@)/0JDEF<G%<+EV:2F!,\n"
+                + "O<DJ+*.@<*K0@<6L(Df-\\0Ec5e;DffZ(EZee.Bl.9pF\"AGXBPCsi+DGm>@3BB/F*&OCAfu2/AKY\n"
+                + "i(DIb:@FD,*)+C]U=@3BN#EcYf8ATD3s@q?d$AftVqCh[NqF<G:8+EV:.+Cf>-FD5W8ARlolDIa\n"
+                + "l(DId<j@<?3r@:F%a+D58'ATD4$Bl@l3De:,-DJs`8ARoFb/0JMK@qB4^F!,R<AKZ&-DfTqBG%G"
+                + ">uD.RTpAKYo'+CT/5+Cei#DII?(E,9)oF*2M7/c~>\n").getBytes("US-ASCII");
         test2 = new byte[test1.length + 1];
         System.arraycopy(test1, 0, test2, 0, 7);
         test2[7] = 'z';
@@ -65,16 +63,14 @@ public class Ascii85InputStreamTest extends TestCase
         super.setUp();
     }
 
-    protected void tearDown() throws Exception
-    {
+    protected void tearDown() throws Exception {
         super.tearDown();
     }
 
     /**
      * Test decoding.
      */
-    public void testDecode() throws Exception
-    {
+    public void testDecode() throws Exception {
         System.out.println("decode");
 
         Ascii85InputStream is = new Ascii85InputStream(new ByteArrayInputStream(test1));
@@ -91,8 +87,7 @@ public class Ascii85InputStreamTest extends TestCase
     /**
      * Test compression feature.
      */
-    public void testCompression() throws Exception
-    {
+    public void testCompression() throws Exception {
         System.out.println("compression - nulls");
 
         Ascii85InputStream is = new Ascii85InputStream(new ByteArrayInputStream(test2));
@@ -102,7 +97,7 @@ public class Ascii85InputStreamTest extends TestCase
             os.write(ch);
         is.close();
         os.close();
-        
+
         byte[] bytes = os.toByteArray();
 
         assertEquals(' ', bytes[3]);
@@ -135,8 +130,7 @@ public class Ascii85InputStreamTest extends TestCase
     /**
      * Test of mark method, of class Ascii85InputStream.
      */
-    public void testMark() throws Exception
-    {
+    public void testMark() throws Exception {
         System.out.println("mark");
 
         Ascii85InputStream is = new Ascii85InputStream(new ByteArrayInputStream(test1));
@@ -152,16 +146,15 @@ public class Ascii85InputStreamTest extends TestCase
     /**
      * Test of skip method, of class Ascii85InputStream.
      */
-    public void testSkip() throws Exception
-    {
+    public void testSkip() throws Exception {
         System.out.println("skip");
 
         Ascii85InputStream is = new Ascii85InputStream(new ByteArrayInputStream(test1));
         assertEquals('M', is.read());
         is.read(); // a
         is.read(); // n
-        is.skip(3); // SP, i, s
-        assertEquals(' ', is.read());
+        is.skip(4); // SP, i, s, SP
+        assertEquals('d', is.read());
         is.close();
     }
 }

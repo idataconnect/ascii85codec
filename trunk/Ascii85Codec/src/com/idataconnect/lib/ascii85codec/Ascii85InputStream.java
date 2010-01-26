@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, i Data Connect!
+ * Copyright (c) 2009-2010, i Data Connect!
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package com.idataconnect.lib.ascii85codec;
 
 import java.io.FilterInputStream;
@@ -48,9 +47,9 @@ import java.io.InputStream;
  * </p>
  * @author Ben Upsavs
  */
-public class Ascii85InputStream extends FilterInputStream
-{
-    private static final int[] POW85 = {85*85*85*85, 85*85*85, 85*85, 85, 1};
+public class Ascii85InputStream extends FilterInputStream {
+
+    private static final int[] POW85 = {85 * 85 * 85 * 85, 85 * 85 * 85, 85 * 85, 85, 1};
     private boolean preserveUnencoded;
     private int tuple, markTuple;
     private int count, markCount;
@@ -66,8 +65,7 @@ public class Ascii85InputStream extends FilterInputStream
      * stream.
      * Any non ascii85 data will be discarded.
      */
-    public Ascii85InputStream(InputStream in)
-    {
+    public Ascii85InputStream(InputStream in) {
         super(in);
     }
 
@@ -77,8 +75,7 @@ public class Ascii85InputStream extends FilterInputStream
      * non-ascii85 data will be output as-is. Otherwise, it is discarded.
      * @param preserveUnencoded Whether to preserve non-ascii85 encoded data.
      */
-    public Ascii85InputStream(InputStream in, boolean preserveUnencoded)
-    {
+    public Ascii85InputStream(InputStream in, boolean preserveUnencoded) {
         this(in);
         this.preserveUnencoded = preserveUnencoded;
     }
@@ -89,14 +86,11 @@ public class Ascii85InputStream extends FilterInputStream
      * @throws java.io.IOException If an underlying I/O error occurs, or if
      * the ascii85 data stream is not valid.
      */
-    public int read() throws IOException
-    {
-        if (tupleBytesRemaining > 0)
-        {
+    public int read() throws IOException {
+        if (tupleBytesRemaining > 0) {
             int returnByte = 0;
             // pull decoded bytes from tuple
-            switch (4 - (tupleSendStartBytes - tupleBytesRemaining--))
-            {
+            switch (4 - (tupleSendStartBytes - tupleBytesRemaining--)) {
                 case 4:
                     returnByte = (tuple >>> 24) & 0xff;
                     break;
@@ -110,27 +104,21 @@ public class Ascii85InputStream extends FilterInputStream
                     returnByte = (tuple)        & 0xff;
                     break;
             }
-            assert(returnByte != 0);
+            assert (returnByte != 0);
 
             if (tupleBytesRemaining == 0)
                 count = tuple = 0;
 
             return returnByte;
-        }
-        else if (nextByte != -1)
-        {
+        } else if (nextByte != -1) {
             int returnByte = nextByte;
             nextByte = -1;
             return returnByte;
-        }
-        else if (!decoding)
-        {
+        } else if (!decoding) {
             int c = in.read();
 
-            if (maybeStarting)
-            {
-                switch (c)
-                {
+            if (maybeStarting) {
+                switch (c) {
                     case '~':
                         maybeStarting = false;
                         decoding = true;
@@ -141,37 +129,28 @@ public class Ascii85InputStream extends FilterInputStream
                     case '<':
                         return '<';
                 }
-            }
-            else if (c == '<')
-            {
+            } else if (c == '<') {
                 maybeStarting = true;
                 return read();
-            }
-            else if (preserveUnencoded || c == -1)
+            } else if (preserveUnencoded || c == -1)
                 return c;
             else
                 return read();
-        }
-        else
-        {
+        } else {
             int c = in.read();
 
-            if (maybeStopping && c != '>')
-            {
+            if (maybeStopping && c != '>') {
                 throw new IOException("~ without > in ascii85 section");
             }
 
             // Ignore whitespace
-            if (Character.isWhitespace((char)c))
+            if (Character.isWhitespace((char) c))
                 return read();
 
-            switch (c)
-            {
+            switch (c) {
                 case '>':
-                    if (maybeStopping)
-                    {
-                        if (count > 0)
-                        {
+                    if (maybeStopping) {
+                        if (count > 0) {
                             count--;
                             tuple += POW85[count];
                             tupleBytesRemaining = tupleSendStartBytes = count;
@@ -181,7 +160,7 @@ public class Ascii85InputStream extends FilterInputStream
                     }
                 default:
                     if (c < '!' || c > 'u')
-                        throw new IOException("Bad character in ascii85 section: [ascii " + c + "]: " + (char)c);
+                        throw new IOException("Bad character in ascii85 section: [ascii " + c + "]: " + (char) c);
                     tuple += (c - '!') * POW85[count++];
                     if (count == 5)
                         tupleBytesRemaining = tupleSendStartBytes = 4;
@@ -190,7 +169,7 @@ public class Ascii85InputStream extends FilterInputStream
                     tuple |= 0x20202020;
                 case 'z': // null compression
                     if (count != 0)
-                        throw new IOException((char)c + " inside ascii85 5-tuple");
+                        throw new IOException((char) c + " inside ascii85 5-tuple");
                     tupleBytesRemaining = tupleSendStartBytes = 4;
                     return read();
                 case '~':
@@ -208,8 +187,7 @@ public class Ascii85InputStream extends FilterInputStream
      * Note that this method relies on the underlying stream having support
      * for mark and reset.
      */
-    public synchronized void mark(int readlimit)
-    {
+    public synchronized void mark(int readlimit) {
         // Save state for mark
         markTuple = tuple;
         markCount = count;
@@ -229,8 +207,7 @@ public class Ascii85InputStream extends FilterInputStream
      * Note that this method relies on the underlying stream having support
      * for mark and reset.
      */
-    public synchronized void reset() throws IOException
-    {
+    public synchronized void reset() throws IOException {
         // Reset state to mark
         tuple = markTuple;
         count = markCount;
@@ -250,11 +227,9 @@ public class Ascii85InputStream extends FilterInputStream
      * in the underlying data stream. In other words, it is not valid to use
      * this method to skip over invalid ascii85 data.
      */
-    public long skip(long n) throws IOException
-    {
+    public long skip(long n) throws IOException {
         int skipCount;
-        for (skipCount = 0; skipCount < n; skipCount++)
-        {
+        for (skipCount = 0; skipCount < n; skipCount++) {
             if (read() == -1)
                 break;
         }

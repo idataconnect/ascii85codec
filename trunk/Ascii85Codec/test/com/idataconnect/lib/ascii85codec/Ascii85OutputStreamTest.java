@@ -74,6 +74,7 @@ public class Ascii85OutputStreamTest extends TestCase
         Ascii85OutputStream os = new Ascii85OutputStream(boas);
         os.write(phrase.getBytes("US-ASCII"));
         os.close();
+        boas.close();
 
         byte[] encoded = boas.toByteArray();
 
@@ -106,7 +107,7 @@ public class Ascii85OutputStreamTest extends TestCase
      */
     public void testEncodeMultiple() throws Exception
     {
-        System.out.println("encodeMultiple");
+        System.out.println("encode multiple ascii85 blocks to one stream");
 
         ByteArrayOutputStream boas = new ByteArrayOutputStream(1024);
         Ascii85OutputStream os = new Ascii85OutputStream(boas);
@@ -114,6 +115,7 @@ public class Ascii85OutputStreamTest extends TestCase
         os.flush();
         os.write(phrase.getBytes("US-ASCII"));
         os.close();
+        boas.close();
 
         byte[] encoded = boas.toByteArray();
 
