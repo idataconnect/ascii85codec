@@ -1,8 +1,12 @@
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><p><a href="https://ascii85codec.dev.java.net/servlets/ProjectDocumentList">Download it here (v1.1)</a></p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><p><big><big><a href="https://ascii85codec.dev.java.net/servlets/ProjectDocumentList">Download it here (v1.1)</a></big></big></p>
 
 <h3>About the codec:</h3>  
 <p>
 Ascii85 encodes binary into printable 7-bit Ascii. It is similar to the well known Base64 codec, although Base64 was designed to work with EBCDIC as well as ascii, which decreases Base64's overall efficiency. While Base64 increases the size of the encoded data by around 33%, Ascii85 has an increase of around 25%. Ascii85 is a better alternative to Base64 in most cases, with e-mail being the most obvious exception. Binary attachments embedded inside Postscript and PDF files are encoded in the Ascii85 format. See <a href="http://en.wikipedia.org/wiki/Ascii85">The Wikipedia Ascii85 page</a> for more information.
+</p>
+<h3>Why use this implementation?</h3>
+<p>
+There are a few others out there, but I believe this one is the only implementation with working mark() and reset() support for the input stream. Also, the others are usually part of a larger software package, and this one is packaged as an easy to use library with JavaDocs.
 </p>
 <h3>How to use it:</h3>
 <p>
@@ -11,5 +15,6 @@ The codec is implemented as subclasses of OutputStream (Ascii85OutputStream) for
 <p>
  This implementation has an option to compress quads of space characters, which can be used to obtain a smaller output when encoding data containing lots of space characters, but its use is discouraged if the encoded output is intended to be interoperable with other Ascii85 implementations.
 </p> 
+               
                
               
