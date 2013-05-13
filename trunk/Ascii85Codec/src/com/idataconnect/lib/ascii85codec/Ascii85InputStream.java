@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010, i Data Connect!
+ * Copyright (c) 2009-2013, i Data Connect!
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ import java.io.InputStream;
 
 /**
  * <p>
- * An Ascii85 decoder, implemented as an {@link InputStream}.
+ * An ascii85 decoder, implemented as an {@link InputStream}.
  * </p>
  * <p>
  * <code>mark()</code> and <code>reset()</code> are supported, provided that
@@ -51,14 +51,8 @@ public class Ascii85InputStream extends FilterInputStream {
 
     private static final int[] POW85 = {85 * 85 * 85 * 85, 85 * 85 * 85, 85 * 85, 85, 1};
     private boolean preserveUnencoded;
-    private int tuple, markTuple;
-    private int count, markCount;
-    private boolean decoding, markDecoding;
-    private boolean maybeStarting, markMaybeStarting;
-    private boolean maybeStopping, markMaybeStopping;
-    private int tupleBytesRemaining, markTupleBytesRemaining;
-    private int tupleSendStartBytes, markTupleSendStartBytes;
-    private int nextByte = -1, markNextByte = -1;
+    private final StreamState streamState = new StreamState();
+    private final StreamState markStreamState = new StreamState();
 
     /**
      * Creates an input stream to decode ascii85 data from the underlying input
@@ -81,56 +75,54 @@ public class Ascii85InputStream extends FilterInputStream {
     }
 
     /**
-     * Reads one byte from this stream. See {@link java.io.InputStream#read()}
-     * for details.
+     * {@inheritDoc}
      * @throws java.io.IOException If an underlying I/O error occurs, or if
      * the ascii85 data stream is not valid.
      */
     public int read() throws IOException {
-        if (tupleBytesRemaining > 0) {
+        if (streamState.tupleBytesRemaining > 0) {
             int returnByte = 0;
             // pull decoded bytes from tuple
-            switch (4 - (tupleSendStartBytes - tupleBytesRemaining--)) {
+            switch (4 - (streamState.tupleSendStartBytes - streamState.tupleBytesRemaining--)) {
                 case 4:
-                    returnByte = (tuple >>> 24) & 0xff;
+                    returnByte = (streamState.tuple >>> 24) & 0xff;
                     break;
                 case 3:
-                    returnByte = (tuple >>> 16) & 0xff;
+                    returnByte = (streamState.tuple >>> 16) & 0xff;
                     break;
                 case 2:
-                    returnByte = (tuple >>>  8) & 0xff;
+                    returnByte = (streamState.tuple >>>  8) & 0xff;
                     break;
                 case 1:
-                    returnByte = (tuple)        & 0xff;
+                    returnByte = (streamState.tuple)        & 0xff;
                     break;
             }
-            assert (returnByte != 0);
 
-            if (tupleBytesRemaining == 0)
-                count = tuple = 0;
+            if (streamState.tupleBytesRemaining == 0)
+                streamState.count = streamState.tuple = 0;
 
             return returnByte;
-        } else if (nextByte != -1) {
-            int returnByte = nextByte;
-            nextByte = -1;
+        } else if (streamState.nextByte != -1) {
+            int returnByte = streamState.nextByte;
+            streamState.nextByte = -1;
             return returnByte;
-        } else if (!decoding) {
+        } else if (!streamState.decoding) {
             int c = in.read();
 
-            if (maybeStarting) {
+            if (streamState.maybeStarting) {
                 switch (c) {
                     case '~':
-                        maybeStarting = false;
-                        decoding = true;
+                        streamState.maybeStarting = false;
+                        streamState.decoding = true;
                         return read();
                     default:
-                        maybeStarting = false;
-                        nextByte = c;
+                        streamState.maybeStarting = false;
+                        streamState.nextByte = c;
                     case '<':
                         return '<';
                 }
             } else if (c == '<') {
-                maybeStarting = true;
+                streamState.maybeStarting = true;
                 return read();
             } else if (preserveUnencoded || c == -1)
                 return c;
@@ -139,7 +131,7 @@ public class Ascii85InputStream extends FilterInputStream {
         } else {
             int c = in.read();
 
-            if (maybeStopping && c != '>') {
+            if (streamState.maybeStopping && c != '>') {
                 throw new IOException("~ without > in ascii85 section");
             }
 
@@ -149,36 +141,52 @@ public class Ascii85InputStream extends FilterInputStream {
 
             switch (c) {
                 case '>':
-                    if (maybeStopping) {
-                        if (count > 0) {
-                            count--;
-                            tuple += POW85[count];
-                            tupleBytesRemaining = tupleSendStartBytes = count;
+                    if (streamState.maybeStopping) {
+                        if (streamState.count > 0) {
+                            streamState.count--;
+                            streamState.tuple += POW85[streamState.count];
+                            streamState.tupleBytesRemaining = streamState.tupleSendStartBytes = streamState.count;
                         }
-                        maybeStopping = decoding = false;
+                        streamState.maybeStopping = streamState.decoding = false;
                         return read();
                     }
                 default:
                     if (c < '!' || c > 'u')
                         throw new IOException("Bad character in ascii85 section: [ascii " + c + "]: " + (char) c);
-                    tuple += (c - '!') * POW85[count++];
-                    if (count == 5)
-                        tupleBytesRemaining = tupleSendStartBytes = 4;
+                    streamState.tuple += (c - '!') * POW85[streamState.count++];
+                    if (streamState.count == 5)
+                        streamState.tupleBytesRemaining = streamState.tupleSendStartBytes = 4;
                     return read();
                 case 'y': // space compression
-                    tuple |= 0x20202020;
+                    streamState.tuple |= 0x20202020;
                 case 'z': // null compression
-                    if (count != 0)
+                    if (streamState.count != 0)
                         throw new IOException((char) c + " inside ascii85 5-tuple");
-                    tupleBytesRemaining = tupleSendStartBytes = 4;
+                    streamState.tupleBytesRemaining = streamState.tupleSendStartBytes = 4;
                     return read();
                 case '~':
-                    maybeStopping = true;
+                    streamState.maybeStopping = true;
                     return read();
                 case -1:
                     throw new IOException("EOF inside ascii85 section");
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws java.io.IOException If an underlying I/O error occurs, or if
+     * the ascii85 data stream is not valid.
+     */
+    public int read(byte[] b, int off, int len) throws IOException {
+        for (int i = 0; i < len; i++) {
+            int readByte = read();
+            if (readByte == -1) {
+                return i == 0 ? -1 : i;
+            }
+            b[i] = (byte) readByte;
+        }
+        return len;
     }
 
     /**
@@ -189,34 +197,21 @@ public class Ascii85InputStream extends FilterInputStream {
      */
     public synchronized void mark(int readlimit) {
         // Save state for mark
-        markTuple = tuple;
-        markCount = count;
-        markDecoding = decoding;
-        markMaybeStarting = maybeStarting;
-        markMaybeStopping = maybeStopping;
-        markTupleBytesRemaining = tupleBytesRemaining;
-        markTupleSendStartBytes = tupleSendStartBytes;
-        markNextByte = nextByte;
+        streamState.copyInto(markStreamState);
 
         super.mark(readlimit * 5);
     }
 
     /**
-     * Resets the stream back to the mark. See
-     * {@link java.io.InputStream#mark(int readLimit)} for details.
+     * {@inheritDoc}
+     * <p>
      * Note that this method relies on the underlying stream having support
      * for mark and reset.
+     * </p>
      */
     public synchronized void reset() throws IOException {
         // Reset state to mark
-        tuple = markTuple;
-        count = markCount;
-        decoding = markDecoding;
-        maybeStarting = markMaybeStarting;
-        maybeStopping = markMaybeStopping;
-        tupleBytesRemaining = markTupleBytesRemaining;
-        tupleSendStartBytes = markTupleSendStartBytes;
-        nextByte = markNextByte;
+        markStreamState.copyInto(streamState);
 
         super.reset();
     }
@@ -235,5 +230,27 @@ public class Ascii85InputStream extends FilterInputStream {
         }
 
         return skipCount - 1;
+    }
+
+    private class StreamState {
+        private int tuple;
+        private int count;
+        private boolean decoding;
+        private boolean maybeStarting;
+        private boolean maybeStopping;
+        private int tupleBytesRemaining;
+        private int tupleSendStartBytes;
+        private int nextByte = -1;
+
+        private void copyInto(StreamState other) {
+            other.tuple = this.tuple;
+            other.count = this.count;
+            other.decoding = this.decoding;
+            other.maybeStarting = this.maybeStarting;
+            other.maybeStopping = this.maybeStopping;
+            other.tupleBytesRemaining = this.tupleBytesRemaining;
+            other.tupleSendStartBytes = this.tupleSendStartBytes;
+            other.nextByte = this.nextByte;
+        }
     }
 }

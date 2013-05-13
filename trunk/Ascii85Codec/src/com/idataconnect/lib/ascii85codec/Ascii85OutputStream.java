@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010, i Data Connect!
+ * Copyright (c) 2009-2013, i Data Connect!
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -212,7 +212,7 @@ public class Ascii85OutputStream extends FilterOutputStream {
         byte[] buf = new byte[5];
         short bufPos = 0;
 
-        long longTuple = 0 | (tuple & 0xffffffffL);
+        long longTuple = (tuple & 0xffffffffL);
 
         do {
             buf[bufPos++] = (byte)(longTuple % 85);
